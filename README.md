@@ -22,7 +22,7 @@ Moreover, if you link `derdiedasjojo/postgres-backup` to a postgres container(e.
     POSTGRES_HOST      the host/ip of your postgres database
     POSTGRES_PORT      the port number of your postgres database
     POSTGRES_USER      the username of your postgres database
-    POSTGRES_PASS      the password of your postgres database
+    PGPASSWORD      the password of your postgres database
     POSTGRES_DB        the database name to dump. Default: `--all-databases`
     EXTRA_OPTS      the extra options to pass to pg_dump command
     CRON_TIME       the interval of cron job to run pg_dump. `0 0 * * *` by default, which is every day at 00:00

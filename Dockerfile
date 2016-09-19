@@ -1,9 +1,6 @@
-FROM ubuntu:trusty
-MAINTAINER Tutum Labs <support@tutum.co>
+FROM postgres:9.4	
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends postgresql-client && \
-    mkdir /backup
+RUN    mkdir /backup
 
 ENV CRON_TIME="0 0 * * *" \
     MYSQL_DB="--all-databases"
@@ -11,3 +8,4 @@ ADD run.sh /run.sh
 VOLUME ["/backup"]
 
 CMD ["/run.sh"]
+
