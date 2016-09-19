@@ -17,6 +17,8 @@ PGPASSWORD=${PGPASSWORD:-${POSTGRES_ENV_POSTGRES_PASS}}
 [ -z "${PGPASSWORD}" ] && { echo "=> PGPASSWORD cannot be empty" && exit 1; }
 
 BACKUP_CMD="pg_dump -h${POSTGRES_HOST} -p${POSTGRES_PORT} -U${POSTGRES_USER} ${EXTRA_OPTS} ${POSTGRES_DB} > /backup/"'${BACKUP_NAME}'
+BACKUP_UPLOAD_CMD="sshpass -p '"${BACKUP_SERVER_PASS}"' scp -r -oStrictHostKeyChecking=no /backup/"'${BACKUP_NAME}'" ${BACKUP_SERVER_USER}@${BACKUP_SERVER}:/mongobackup/${BACKUP_REMOTE_SUBFOLDER}/${BACKUP_NAME}"
+SFTP_CMD="sshpass -p ${BACKUP_SERVER_PASS} sftp ${BACKUP_SERVER_USER}@${BACKUP_SERVER}"
 
 echo "=> Creating backup script"
 rm -f /backup.sh
@@ -29,6 +31,11 @@ BACKUP_NAME=\$(date +\%Y.\%m.\%d.\%H\%M\%S).sql
 echo "=> Backup started: \${BACKUP_NAME}"
 if ${BACKUP_CMD} ;then
     echo "   Backup succeeded"
+
+    echo "=> Uploading Backup started"
+    echo ${BACKUP_UPLOAD_CMD}
+    ${BACKUP_UPLOAD_CMD} && echo "  Upload succeeded" || echo "  Upload failed"
+
 else
     echo "   Backup failed"
     rm -rf /backup/\${BACKUP_NAME}
@@ -42,6 +49,20 @@ if [ -n "\${MAX_BACKUPS}" ]; then
         rm -rf /backup/\${BACKUP_TO_BE_DELETED}
     done
 fi
+
+if [ -n "\${MAX_REMOTE_BACKUPS}" ]; then
+    while [ \$(echo ls /backup/${BACKUP_REMOTE_SUBFOLDER} | ${SFTP_CMD} | wc -l ) -ge \${MAX_REMOTE_BACKUPS} ];
+    do
+        BACKUP_TO_BE_DELETED=\$(echo ls -1 /backup/${BACKUP_REMOTE_SUBFOLDER} | ${SFTP_CMD} | sort | head -n 1)
+        echo "   Deleting REMOTE backup \${BACKUP_TO_BE_DELETED}"
+        DBFOLDER_TO_BE_DELETED=\$(echo ls -1 \${BACKUP_TO_BE_DELETED} | ${SFTP_CMD} | sort | head -n 1)
+        echo rm \${DBFOLDER_TO_BE_DELETED}/* | ${SFTP_CMD}
+        echo rmdir \${DBFOLDER_TO_BE_DELETED} | ${SFTP_CMD}
+        echo rmdir \${BACKUP_TO_BE_DELETED} | ${SFTP_CMD}
+    done
+fi
+
+
 echo "=> Backup done"
 EOF
 chmod +x /backup.sh
