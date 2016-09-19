@@ -9,14 +9,14 @@ POSTGRES_HOST=${POSTGRES_PORT_1_3306_TCP_ADDR:-${POSTGRES_HOST}}
 POSTGRES_PORT=${POSTGRES_PORT_3306_TCP_PORT:-${POSTGRES_PORT}}
 POSTGRES_PORT=${POSTGRES_PORT_1_3306_TCP_PORT:-${POSTGRES_PORT}}
 POSTGRES_USER=${POSTGRES_USER:-${POSTGRES_ENV_POSTGRES_USER}}
-POSTGRES_PASS=${POSTGRES_PASS:-${POSTGRES_ENV_POSTGRES_PASS}}
+PGPASSWORD=${PGPASSWORD:-${POSTGRES_ENV_POSTGRES_PASS}}
 
 [ -z "${POSTGRES_HOST}" ] && { echo "=> POSTGRES_HOST cannot be empty" && exit 1; }
 [ -z "${POSTGRES_PORT}" ] && { echo "=> POSTGRES_PORT cannot be empty" && exit 1; }
 [ -z "${POSTGRES_USER}" ] && { echo "=> POSTGRES_USER cannot be empty" && exit 1; }
-[ -z "${POSTGRES_PASS}" ] && { echo "=> POSTGRES_PASS cannot be empty" && exit 1; }
+[ -z "${PGPASSWORD}" ] && { echo "=> PGPASSWORD cannot be empty" && exit 1; }
 
-BACKUP_CMD="pg_dump -h${POSTGRES_HOST} -p${POSTGRES_PORT} -U${POSTGRES_USER} --password ${POSTGRES_PASS} ${EXTRA_OPTS} ${POSTGRES_DB} > /backup/"'${BACKUP_NAME}'
+BACKUP_CMD="pg_dump -h${POSTGRES_HOST} -p${POSTGRES_PORT} -U${POSTGRES_USER} ${EXTRA_OPTS} ${POSTGRES_DB} > /backup/"'${BACKUP_NAME}'
 
 echo "=> Creating backup script"
 rm -f /backup.sh
@@ -51,7 +51,7 @@ rm -f /restore.sh
 cat <<EOF >> /restore.sh
 #!/bin/bash
 echo "=> Restore database from \$1"
-if pg_restore -h${POSTGRES_HOST} -p${POSTGRES_PORT} -U${POSTGRES_USER} --password ${POSTGRES_PASS} < \$1 ;then
+if pg_restore -h${POSTGRES_HOST} -p${POSTGRES_PORT} -U${POSTGRES_USER} < \$1 ;then
     echo "   Restore succeeded"
 else
     echo "   Restore failed"
@@ -80,3 +80,4 @@ echo "${CRON_TIME} /backup.sh >> /postgres_backup.log 2>&1" > /crontab.conf
 crontab  /crontab.conf
 echo "=> Running cron job"
 exec cron -f
+
